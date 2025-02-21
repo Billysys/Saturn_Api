@@ -1,0 +1,3 @@
+﻿internal static class ApiHelpersHelpersBase
+{
+}
