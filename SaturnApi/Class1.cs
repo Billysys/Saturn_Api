@@ -12,16 +12,16 @@ namespace SaturnApi
     {
         private static bool _isInjected = false;
 
-        [DllImport("dll\\Cloudy.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("dll\\Nezur.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern void Initialize();
 
-        [DllImport("dll\\Cloudy.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("dll\\Nezur.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern void Attach();
 
-        [DllImport("dll\\Cloudy.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("dll\\Nezur.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr GetClients();
 
-        [DllImport("dll\\Cloudy.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        [DllImport("dll\\Nezur.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         private static extern void Execute(byte[] scriptSource, string[] clientUsers, int numUsers);
 
         public static void Inject()
