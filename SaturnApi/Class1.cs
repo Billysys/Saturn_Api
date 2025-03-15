@@ -26,55 +26,107 @@ namespace SaturnApi
 
         public static void Inject()
         {
-            Api.Initialize();
-            _isInjected = true;
-            Thread.Sleep(1000);
+            try
+            {
+                Api.Initialize();
+                _isInjected = true;
+                Thread.Sleep(1000);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Injection Error: " + ex.Message);
+                _isInjected = false;
+            }
         }
-        public static bool IsInjected()
-        {
-            return _isInjected;
-        }
+        public static bool IsInjected() => _isInjected;
 
         public static bool IsRobloxOpen()
         {
-            return Process.GetProcessesByName("RobloxPlayerBeta").Length != 0;
+            try
+            {
+                return Process.GetProcessesByName("RobloxPlayerBeta").Any();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("IsRobloxOpen Error: " + ex.Message);
+                return false;
+            }
         }
         public static void Execute(string scriptSource)
         {
-            string[] array = (from c in Api.GetClientsList()
-                              select c.name).ToArray<string>();
-            Api.Execute(Encoding.UTF8.GetBytes(scriptSource), array, array.Length);
+            if (!_isInjected)
+            {
+                Console.WriteLine("Uninjected Api");
+                return;
+            }
+            try
+            {
+                var clients = GetClientsList();
+                if (clients.Count == 0)
+                {
+                    Console.WriteLine("No clients found");
+                    return;
+                }
+                string[] clientNames = clients.Select(c => c.name).ToArray();
+                byte[] scriptBytes = Encoding.UTF8.GetBytes(scriptSource);
+                Execute(scriptBytes, clientNames, clientNames.Length);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Execution Error: " + ex.Message);
+            }
         }
 
         public static void KillRoblox()
         {
-            bool flag = !Api.IsRobloxOpen();
-            if (!flag)
+            try
             {
-                foreach (Process process in Process.GetProcessesByName("RobloxPlayerBeta"))
+                if (IsRobloxOpen())
                 {
-                    process.Kill();
+                    foreach (Process process in Process.GetProcessesByName("RobloxPlayerBeta"))
+                    {
+                        process.Kill();
+                    }
                 }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("KillRoblox Error: " + ex.Message);
             }
         }
 
-        public static List<Api.ClientInfo> GetClientsList()
+        public static List<ClientInfo> GetClientsList()
         {
-            List<Api.ClientInfo> list = new List<Api.ClientInfo>();
-            IntPtr intPtr = Api.GetClients();
-            for (; ; )
+            List<ClientInfo> clients = new List<ClientInfo>();
+            try
             {
-                Api.ClientInfo clientInfo = Marshal.PtrToStructure<Api.ClientInfo>(intPtr);
-                bool flag = clientInfo.name != null;
-                if (!flag)
+                IntPtr ptr = GetClients();
+                int size = Marshal.SizeOf<ClientInfo>();
+                int counter = 0;
+                const int maxClients = 1000;
+                while (counter < maxClients)
                 {
-                    break;
+                    ClientInfo client = Marshal.PtrToStructure<ClientInfo>(ptr);
+                    if (string.IsNullOrEmpty(client.name))
+                    {
+                        break;
+                    }
+                    clients.Add(client);
+                    ptr = IntPtr.Add(ptr, size);
+                    counter++;
                 }
-                list.Add(clientInfo);
-                intPtr += Marshal.SizeOf<Api.ClientInfo>();
+                if (counter == maxClients)
+                {
+                    Console.WriteLine("Maximum number of clients reached");
+                }
             }
-            return list;
+            catch (Exception ex)
+            {
+                Console.WriteLine("etClientsList Error: " + ex.Message);
+            }
+            return clients;
         }
+
 
         public struct ClientInfo
         {
