@@ -127,7 +127,6 @@ namespace SaturnApi
             return clients;
         }
 
-
         public struct ClientInfo
         {
             public string version;
