@@ -52,6 +52,17 @@ namespace SaturnApi
                 return false;
             }
         }
+        
+        public static bool IsRobloxClose()
+        {
+            bool isClosed = !IsRobloxOpen();
+            if (isClosed)
+            {
+                _isInjected = false;
+            }
+            return isClosed;
+        }
+        
         public static void Execute(string scriptSource)
         {
             if (!_isInjected)
