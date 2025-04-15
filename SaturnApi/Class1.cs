@@ -12,16 +12,16 @@ namespace SaturnApi
     {
         private static bool _isInjected = false;
 
-        [DllImport("dll\\Cloudy.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("dll\\Nezur.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern void Initialize();
 
-        [DllImport("dll\\Cloudy.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("dll\\Nezur.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern void Attach();
 
-        [DllImport("dll\\Cloudy.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport("dll\\Nezur.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr GetClients();
 
-        [DllImport("dll\\Cloudy.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        [DllImport("dll\\Nezur.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
         private static extern void Execute(byte[] scriptSource, string[] clientUsers, int numUsers);
 
         public static void Inject()
@@ -72,14 +72,14 @@ namespace SaturnApi
             }
             try
             {
-                var clients = GetClientsList();
+                List<ClientInfo> clients = GetClientsList();
                 if (clients.Count == 0)
                 {
                     Console.WriteLine("No clients found");
                     return;
                 }
-                string[] clientNames = clients.Select(c => c.name).ToArray();
                 byte[] scriptBytes = Encoding.UTF8.GetBytes(scriptSource);
+                string[] clientNames = clients.Select(c => c.name).ToArray();
                 Execute(scriptBytes, clientNames, clientNames.Length);
             }
             catch (Exception ex)
