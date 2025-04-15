@@ -9,6 +9,6 @@
 
 # Credits
 
-CNezur
+Nezur
 
 https://nezur.io/
