@@ -10,11 +10,17 @@
 # Functions
 
 SaturnApi.Api.Inject();
+
 SaturnApi.Api.Execute();
+
 SaturnApi.Api.IsRobloxClose();
+
 SaturnApi.Api.IsRobloxOpen();
+
 SaturnApi.Api.IsInjected();
+
 SaturnApi.Api.KillRoblox();
+
 SaturnApi.Api.GetClientsList()
 
 # Credits
