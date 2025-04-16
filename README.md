@@ -7,6 +7,16 @@
 - Nezur.dll
 - Only works on roblox web version
 
+# Functions
+
+SaturnApi.Api.Inject();
+SaturnApi.Api.Execute();
+SaturnApi.Api.IsRobloxClose();
+SaturnApi.Api.IsRobloxOpen();
+SaturnApi.Api.IsInjected();
+SaturnApi.Api.KillRoblox();
+SaturnApi.Api.GetClientsList()
+
 # Credits
 
 Nezur
