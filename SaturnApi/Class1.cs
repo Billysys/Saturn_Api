@@ -1,150 +1,114 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading;
+using System.Text.RegularExpressions;
 
 namespace SaturnApi
 {
-    public class Api
+    public static class Api
     {
-        private static bool _isInjected = false;
+        private const string DllName = "Xeno.dll";
 
-        [DllImport("dll\\Nezur.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void Initialize();
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        private static extern void Initialize(bool useConsole);
 
-        [DllImport("dll\\Nezur.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         private static extern void Attach();
 
-        [DllImport("dll\\Nezur.dll", CallingConvention = CallingConvention.Cdecl)]
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr GetClients();
 
-        [DllImport("dll\\Nezur.dll", CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
-        private static extern void Execute(byte[] scriptSource, string[] clientUsers, int numUsers);
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+        private static extern void Execute(byte[] scriptSource, int[] PIDs, int numUsers);
+
+        private static bool _isInjected;
+        private static bool _initialized;
 
         public static void Inject()
         {
-            try
+            if (!_initialized)
             {
-                Api.Initialize();
-                _isInjected = true;
-                Thread.Sleep(1000);
+                Initialize(false);
+                _initialized = true;
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Injection Error: " + ex.Message);
-                _isInjected = false;
-            }
+
+            Attach();
+            WaitForClients();
+
+            _isInjected = GetClientsList().Count > 0;
         }
+
         public static bool IsInjected() => _isInjected;
 
-        public static bool IsRobloxOpen()
-        {
-            try
-            {
-                return Process.GetProcessesByName("RobloxPlayerBeta").Any();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("IsRobloxOpen Error: " + ex.Message);
-                return false;
-            }
-        }
-        
-        public static bool IsRobloxClose()
-        {
-            bool isClosed = !IsRobloxOpen();
-            if (isClosed)
-            {
-                _isInjected = false;
-            }
-            return isClosed;
-        }
-        
-        public static void Execute(string scriptSource)
-        {
-            if (!_isInjected)
-            {
-                Console.WriteLine("Uninjected Api");
-                return;
-            }
-            try
-            {
-                List<ClientInfo> clients = GetClientsList();
-                if (clients.Count == 0)
-                {
-                    Console.WriteLine("No clients found");
-                    return;
-                }
-                byte[] scriptBytes = Encoding.UTF8.GetBytes(scriptSource);
-                string[] clientNames = clients.Select(c => c.name).ToArray();
-                Execute(scriptBytes, clientNames, clientNames.Length);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Execution Error: " + ex.Message);
-            }
-        }
+        public static bool IsRobloxOpen() =>
+            Process.GetProcessesByName("RobloxPlayerBeta").Any();
 
         public static void KillRoblox()
         {
-            try
+            foreach (var proc in Process.GetProcessesByName("RobloxPlayerBeta"))
             {
-                if (IsRobloxOpen())
-                {
-                    foreach (Process process in Process.GetProcessesByName("RobloxPlayerBeta"))
-                    {
-                        process.Kill();
-                    }
-                }
+                try { proc.Kill(); } catch { }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine("KillRoblox Error: " + ex.Message);
-            }
+        }
+
+        public static void Execute(string scriptSource)
+        {
+            var clients = GetClientsList();
+            if (clients.Count == 0) return;
+
+            int[] ids = clients.Select(c => c.Id).ToArray();
+            byte[] scriptBytes = Encoding.UTF8.GetBytes(scriptSource + "\0");
+            Execute(scriptBytes, ids, ids.Length);
         }
 
         public static List<ClientInfo> GetClientsList()
         {
-            List<ClientInfo> clients = new List<ClientInfo>();
-            try
+            var result = new List<ClientInfo>();
+            IntPtr ptr = GetClients();
+
+            if (ptr == IntPtr.Zero) return result;
+
+            string raw = Marshal.PtrToStringAnsi(ptr);
+            if (string.IsNullOrWhiteSpace(raw)) return result;
+
+            var matches = Regex.Matches(raw, "\\[\\s*(\\d+),\\s*\"(.*?)\",\\s*\"(.*?)\",\\s*(\\d+)\\s*\\]");
+            foreach (Match match in matches)
             {
-                IntPtr ptr = GetClients();
-                int size = Marshal.SizeOf<ClientInfo>();
-                int counter = 0;
-                const int maxClients = 1000;
-                while (counter < maxClients)
+                result.Add(new ClientInfo
                 {
-                    ClientInfo client = Marshal.PtrToStructure<ClientInfo>(ptr);
-                    if (string.IsNullOrEmpty(client.name))
-                    {
-                        break;
-                    }
-                    clients.Add(client);
-                    ptr = IntPtr.Add(ptr, size);
-                    counter++;
-                }
-                if (counter == maxClients)
-                {
-                    Console.WriteLine("Maximum number of clients reached");
-                }
+                    Id = int.Parse(match.Groups[1].Value),
+                    Name = match.Groups[2].Value,
+                    Version = match.Groups[3].Value,
+                    State = int.Parse(match.Groups[4].Value)
+                });
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine("etClientsList Error: " + ex.Message);
-            }
-            return clients;
+
+            return result;
         }
+
+        private static void WaitForClients(int timeoutMs = 3000, int pollInterval = 100)
+        {
+            int waited = 0;
+            while (waited < timeoutMs)
+            {
+                if (GetClientsList().Count > 0) break;
+                System.Threading.Thread.Sleep(pollInterval);
+                waited += pollInterval;
+            }
+        }
+
+        private static string EscapeLuaString(string input) =>
+            input.Replace("\\", "\\\\").Replace("'", "\\'");
 
         public struct ClientInfo
         {
-            public string version;
-
-            public string name;
-
-            public int id;
+            public int Id;
+            public string Name;
+            public string Version;
+            public int State;
         }
     }
 }
