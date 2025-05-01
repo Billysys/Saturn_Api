@@ -2,9 +2,9 @@
  Here is the code of Saturn Api, open-source and free!
  Saturn Api is based on Nezur.
 
-- UNC: 94%
+- UNC: 81%
 - Level: 3
-- Nezur.dll
+- Xenor.dll
 - Only works on roblox web version
 
 # Functions
@@ -12,8 +12,6 @@
 SaturnApi.Api.Inject();
 
 SaturnApi.Api.Execute();
-
-SaturnApi.Api.IsRobloxClose();
 
 SaturnApi.Api.IsRobloxOpen();
 
@@ -25,6 +23,8 @@ SaturnApi.Api.GetClientsList()
 
 # Credits
 
-Nezur
+Xeno
 
-https://nezur.io/
+https://discord.gg/xeno-now
+
+https://www.xeno.now/
