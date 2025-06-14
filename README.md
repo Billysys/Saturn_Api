@@ -2,8 +2,8 @@
  Here is the code of Saturn Api, open-source and free!
  Saturn Api is based on Xeno.
 
-- UNC: 83%
-- Level: 3
+- UNC: ⁓89%
+- Level: 4
 - Xeno.dll
 - Only works on roblox web version
 
@@ -19,7 +19,6 @@ SaturnApi.Api.IsInjected();
 
 SaturnApi.Api.KillRoblox();
 
-SaturnApi.Api.GetClientsList()
 
 # Credits
 
